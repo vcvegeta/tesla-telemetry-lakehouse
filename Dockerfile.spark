@@ -1,0 +1,21 @@
+FROM apache/spark:3.5.1
+
+USER root
+
+# Create Ivy cache directories for Maven packages
+RUN mkdir -p /home/spark/.ivy2/cache /home/spark/.ivy2/jars && \
+    chown -R spark:spark /home/spark
+
+# Copy Spark jobs
+COPY spark/streaming_jobs /opt/spark/work-dir/spark/streaming_jobs
+COPY spark/batch_jobs /opt/spark/work-dir/spark/batch_jobs
+
+# Set permissions
+RUN chown -R spark:spark /opt/spark/work-dir
+
+USER spark
+
+# Download dependencies at build time to speed up startup
+RUN /opt/spark/bin/spark-submit --packages org.apache.hadoop:hadoop-aws:3.3.4,org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1,org.postgresql:postgresql:42.7.1 --class org.apache.spark.sql.SparkSession --help > /dev/null 2>&1 || true
+
+WORKDIR /opt/spark/work-dir

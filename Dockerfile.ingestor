@@ -1,0 +1,12 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Copy requirements and install
+COPY services/ingestor/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy ingestor script
+COPY services/ingestor/ingest.py .
+
+CMD ["python", "ingest.py"]
