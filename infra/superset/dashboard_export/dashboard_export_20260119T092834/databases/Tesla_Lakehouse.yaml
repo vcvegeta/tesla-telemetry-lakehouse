@@ -1,0 +1,13 @@
+database_name: Tesla Lakehouse
+sqlalchemy_uri: postgresql+psycopg2://airflow:airflow@postgres:5432/lakehouse
+cache_timeout: null
+expose_in_sqllab: true
+allow_run_async: false
+allow_ctas: true
+allow_cvas: true
+allow_dml: true
+allow_file_upload: true
+extra: "{}"
+impersonate_user: false
+uuid: 11111111-1111-1111-1111-111111111111
+version: 1.0.0

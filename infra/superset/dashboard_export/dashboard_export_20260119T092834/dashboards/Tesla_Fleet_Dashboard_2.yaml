@@ -1,0 +1,74 @@
+dashboard_title: Tesla Fleet Dashboard
+description: null
+css: null
+slug: null
+certified_by: null
+certification_details: null
+published: false
+uuid: 91ee59ed-5b6c-47b6-97b9-3f15e238252c
+metadata:
+  color_scheme_domain: []
+  shared_label_colors: []
+  map_label_colors: {}
+  label_colors: {}
+position:
+  DASHBOARD_VERSION_KEY: v2
+  ROOT_ID:
+    children:
+    - GRID_ID
+    id: ROOT_ID
+    type: ROOT
+  GRID_ID:
+    children:
+    - ROW-N-DHUO1RST
+    id: GRID_ID
+    parents:
+    - ROOT_ID
+    type: GRID
+  HEADER_ID:
+    id: HEADER_ID
+    meta:
+      text: Tesla Fleet Dashboard
+    type: HEADER
+  ROW-N-DHUO1RST:
+    children:
+    - CHART-3SDL4ED5
+    - CHART-S2U9FJ1X
+    id: ROW-N-DHUO1RST
+    meta:
+      '0': ROOT_ID
+      background: BACKGROUND_TRANSPARENT
+    type: ROW
+    parents:
+    - ROOT_ID
+    - GRID_ID
+  CHART-3SDL4ED5:
+    children: []
+    id: CHART-3SDL4ED5
+    meta:
+      chartId: 3
+      height: 50
+      sliceName: Tesla Telemetry Events Per Minute
+      uuid: c451e0ee-3fc7-42a8-8598-626f22525543
+      width: 4
+    type: CHART
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-N-DHUO1RST
+  CHART-S2U9FJ1X:
+    children: []
+    id: CHART-S2U9FJ1X
+    meta:
+      chartId: 2
+      height: 50
+      sliceName: Tesla Battery Level Over Time
+      uuid: d577669c-6a34-4aaa-a857-fd729c13e991
+      width: 4
+    type: CHART
+    parents:
+    - ROOT_ID
+    - GRID_ID
+    - ROW-N-DHUO1RST
+theme_uuid: null
+version: 1.0.0
