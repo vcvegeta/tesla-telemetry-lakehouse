@@ -83,54 +83,32 @@ for dataset in datasets:
 
 conn.commit()
 
-# Create charts with proper temporal configuration
+# Create simple table charts
 charts = [
     {
         'slice_name': 'Battery Level Over Time',
-        'viz_type': 'echarts_timeseries_line',
+        'viz_type': 'table',
         'datasource_id': dataset_ids['gold_vehicle_minute_metrics'],
         'datasource_type': 'table',
         'params': json.dumps({
-            'granularity_sqla': 'minute_ts',
-            'time_grain_sqla': 'P1M',
-            'time_range': 'Last week',
-            'metrics': [
-                {
-                    'expressionType': 'SIMPLE',
-                    'column': {'column_name': 'min_battery_percent', 'type': 'INTEGER'},
-                    'aggregate': 'AVG',
-                    'label': 'AVG(min_battery_percent)'
-                }
-            ],
-            'adhoc_filters': [],
-            'groupby': [],
-            'limit': 10000,
-            'viz_type': 'echarts_timeseries_line',
-            'color_scheme': 'supersetColors',
+            'viz_type': 'table',
+            'query_mode': 'raw',
+            'all_columns': ['minute_ts', 'min_battery_percent', 'event_count'],
+            'order_by_cols': ['["minute_ts", false]'],
+            'row_limit': 100,
         })
     },
     {
         'slice_name': 'Events Per Minute',
-        'viz_type': 'echarts_timeseries_bar',
+        'viz_type': 'table',
         'datasource_id': dataset_ids['gold_fleet_minute_metrics'],
         'datasource_type': 'table',
         'params': json.dumps({
-            'granularity_sqla': 'minute_ts',
-            'time_grain_sqla': 'P1M',
-            'time_range': 'Last week',
-            'metrics': [
-                {
-                    'expressionType': 'SIMPLE',
-                    'column': {'column_name': 'total_events', 'type': 'BIGINT'},
-                    'aggregate': 'SUM',
-                    'label': 'SUM(total_events)'
-                }
-            ],
-            'adhoc_filters': [],
-            'groupby': [],
-            'limit': 10000,
-            'viz_type': 'echarts_timeseries_bar',
-            'color_scheme': 'supersetColors',
+            'viz_type': 'table',
+            'query_mode': 'raw',
+            'all_columns': ['minute_ts', 'total_events', 'min_battery_percent_fleet'],
+            'order_by_cols': ['["minute_ts", false]'],
+            'row_limit': 100,
         })
     }
 ]
