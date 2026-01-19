@@ -10,6 +10,9 @@ RUN python -m ensurepip && \
 COPY superset-init.sh /app/docker/superset-init.sh
 RUN chmod +x /app/docker/superset-init.sh
 
+# Copy dashboard export for auto-import
+COPY dashboards_export.zip /app/docker/dashboards_export.zip
+
 USER superset
 
 # Use custom init script as entrypoint
