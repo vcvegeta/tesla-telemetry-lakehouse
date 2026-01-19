@@ -209,8 +209,6 @@ services:
   ingestor:
     build:
       context: ../services/ingestor
-    env_file:
-      - ../services/ingestor/.env
     depends_on:
       - kafka
     restart: always
