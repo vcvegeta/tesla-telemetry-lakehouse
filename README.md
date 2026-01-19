@@ -9,7 +9,7 @@ A real-time data lakehouse pipeline for Tesla vehicle telemetry data, built with
 
 A production-ready data lakehouse implementation processing Tesla vehicle telemetry through the medallion architecture (Bronze → Silver → Gold layers). The entire pipeline runs in Docker containers with automated initialization.
 
-**What makes this different:** Everything auto-configures on startup. No manual database connections, no manual dashboard setup. Just run `docker-compose up -d` and you're ready.
+**What makes this different:** Everything auto-configures on startup. PostgreSQL database connection is created automatically in Superset. Just run `docker-compose up -d`, wait for data to populate, then create your custom dashboards in minutes.
 
 ### Technical Stack
 
@@ -70,11 +70,11 @@ docker-compose up -d
 Wait 2-3 minutes for initialization. All services start automatically:
 - MinIO creates the `lakehouse` bucket
 - PostgreSQL initializes the database schema
-- Superset creates database connections, datasets, charts, and dashboards
+- Superset creates database connection to PostgreSQL automatically
 - Airflow loads the batch processing DAG
 - Streaming jobs begin processing Kafka events
 
-Dashboards populate with data within 10-15 minutes as events flow through the pipeline.
+Data populates within 10-15 minutes. Then follow [`infra/DASHBOARD_GUIDE.md`](infra/DASHBOARD_GUIDE.md) to create your custom dashboards (~5 minutes).
 
 ## Service Endpoints
 
@@ -106,20 +106,29 @@ The ingestor generates mock Tesla telemetry events every 10 seconds and publishe
 
 ### Superset Dashboards
 
-On first startup, an initialization script creates:
-- Database connection to PostgreSQL
-- Two datasets (gold_vehicle_minute_metrics, gold_fleet_minute_metrics)
-- Two charts (Battery Level Over Time, Events Per Minute)
-- A dashboard containing both charts
+**What's Automated:**
+On first startup, Superset automatically:
+- ✅ Creates database connection to PostgreSQL (`Tesla Lakehouse`)
+- ✅ Installs PostgreSQL driver (psycopg2-binary)
+- ✅ Initializes admin user (username: `admin`, password: `admin`)
 
-Access the dashboard:
-1. Navigate to http://localhost:8088
-2. Login: admin / admin
-3. Go to Dashboards → Tesla Fleet Dashboard
+**Your Part (~5 minutes):**
+Create custom visualizations following the guide in [`infra/DASHBOARD_GUIDE.md`](infra/DASHBOARD_GUIDE.md):
 
-Charts populate with data after 10-15 minutes once the pipeline processes events through all three layers.
+1. Login to Superset: http://localhost:8088 (admin/admin)
+2. Create dataset from `gold_vehicle_minute_metrics` table
+3. Build 2 example charts:
+   - **Battery Level Over Time** (Line Chart) - `MIN(min_battery_percent)` by `minute_ts`
+   - **Events Per Minute** (Bar Chart) - `SUM(event_count)` by `minute_ts`
+4. Add charts to a dashboard
 
-The automation works by directly inserting records into Superset's SQLite metadata database during container initialization. This survives `docker-compose down -v` restarts. See [SUPERSET_DASHBOARD.md](SUPERSET_DASHBOARD.md) for implementation details.
+**Available Data Tables:**
+- `gold_vehicle_minute_metrics`: Per-vehicle metrics (battery, speed, events)
+- `gold_fleet_minute_metrics`: Fleet-wide aggregations
+
+**Why manual chart creation?** This gives you flexibility to build custom visualizations tailored to your needs. Superset supports 50+ chart types - create as many dashboards as you want!
+
+Charts populate with data after 10-15 minutes once the pipeline processes events through all layers.
 
 ### Airflow
 
@@ -153,6 +162,29 @@ The `silver_to_gold_batch` DAG runs every 10 minutes, triggering a Spark job tha
 | Database | PostgreSQL | 16 |
 | Visualization | Apache Superset | 4.1.0 |
 | Language | Python | 3.11 |
+
+## 🎯 What's Automated
+
+This project emphasizes automation while giving you creative control over visualizations:
+
+### ✅ Fully Automated (Zero Manual Steps):
+- **Infrastructure Setup**: All containers auto-configure on startup
+- **MinIO Initialization**: Lakehouse bucket created automatically
+- **PostgreSQL Setup**: Database and tables initialized
+- **Superset Database Connection**: PostgreSQL connection pre-configured
+- **Superset Admin User**: Login credentials ready (admin/admin)
+- **Data Pipeline**: Streaming and batch jobs start automatically
+- **Airflow DAGs**: Batch processing scheduled every 10 minutes
+
+### 👤 User-Created (~5 minutes):
+- **Dashboards & Charts**: Build custom visualizations using Superset UI
+  - Follow step-by-step guide: [`infra/DASHBOARD_GUIDE.md`](infra/DASHBOARD_GUIDE.md)
+  - Create as many charts as needed (line, bar, table, heatmap, etc.)
+  - Full flexibility to design dashboards for your use case
+
+**Why this approach?** Database connections are tedious to set up repeatedly, so we automated them. Chart creation is fast, creative, and gives you control over your analytics layer. Best of both worlds!
+
+---
 
 ## 🔧 Configuration
 
@@ -192,13 +224,12 @@ SPARK_WORKER_MEMORY: 2g
 ```
 tesla-telemetry-lakehouse/
 ├── README.md
-├── SUPERSET_DASHBOARD.md
 ├── infra/
 │   ├── docker-compose.yml
+│   ├── DASHBOARD_GUIDE.md          # Step-by-step dashboard creation
 │   └── superset/
 │       ├── Dockerfile
-│       ├── superset-init.sh
-│       └── create_charts.py
+│       └── superset-init.sh        # Auto-creates DB connection
 ├── airflow/
 │   └── dags/
 │       └── silver_to_gold_dag.py
@@ -220,12 +251,13 @@ tesla-telemetry-lakehouse/
 This project demonstrates:
 
 - End-to-end data lakehouse implementation with medallion architecture
-- Stream processing with Spark Structured Streaming
+- Real-time stream processing with Spark Structured Streaming
 - Batch orchestration using Airflow
 - Infrastructure as code with Docker Compose
-- Programmatic dashboard creation and deployment automation
+- Automated database connection setup for Superset
+- Production-ready deployment with proper resource isolation
 
-Suitable for portfolio projects, technical interviews, and learning modern data engineering patterns. The automated setup makes it easy to demonstrate during presentations.
+Suitable for portfolio projects, technical interviews, and learning modern data engineering patterns. The streamlined setup makes it easy to demonstrate during presentations.
 
 ## Troubleshooting
 
@@ -246,16 +278,19 @@ SPARK_WORKER_MEMORY: 1g
 This is normal for the first 10-15 minutes. Data flows through the pipeline in stages:
 - Minutes 0-5: Events land in Bronze layer from Kafka
 - Minutes 5-10: Streaming job processes Bronze to Silver
-- Minutes 10-15: Batch job aggregates Silver to Gold (charts populate)
+- Minutes 10-15: Batch job aggregates Silver to Gold (PostgreSQL tables ready)
+
+After ~15 minutes, follow [`infra/DASHBOARD_GUIDE.md`](infra/DASHBOARD_GUIDE.md) to create dashboards.
 
 Verify data exists:
 ```bash
 docker exec tesla-telemetry-postgres-1 psql -U airflow -d lakehouse -c "SELECT COUNT(*) FROM gold_vehicle_minute_metrics;"
 ```
 
-Verify dashboard creation:
+Verify database connection:
 ```bash
-docker logs tesla-telemetry-superset-1 | grep "setup complete"
+docker logs tesla-telemetry-superset-1 | grep "Database connection"
+# Should show: ✅ Database connection 'Tesla Lakehouse' created successfully!
 ```
 
 **Test full automation:**
