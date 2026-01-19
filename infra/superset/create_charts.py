@@ -91,12 +91,12 @@ charts = [
         'datasource_id': dataset_ids['gold_vehicle_minute_metrics'],
         'datasource_type': 'table',
         'params': json.dumps({
-            'metrics': ['AVG(min_battery_percent)'],
-            'time_column': 'minute_ts',
-            'time_grain': 'P1M',  # 1 minute
+            'time_grain_sqla': 'P1M',
+            'time_range': 'No filter',
+            'metrics': [{'expressionType': 'SIMPLE', 'column': {'column_name': 'min_battery_percent'}, 'aggregate': 'AVG', 'label': 'AVG(min_battery_percent)'}],
+            'adhoc_filters': [],
+            'groupby': [],
             'viz_type': 'echarts_timeseries_line',
-            'x_axis': 'minute_ts',
-            'y_axis': 'min_battery_percent',
         })
     },
     {
@@ -105,12 +105,12 @@ charts = [
         'datasource_id': dataset_ids['gold_fleet_minute_metrics'],
         'datasource_type': 'table',
         'params': json.dumps({
-            'metrics': ['SUM(total_events)'],
-            'time_column': 'minute_ts',
-            'time_grain': 'P1M',
+            'time_grain_sqla': 'P1M',
+            'time_range': 'No filter',
+            'metrics': [{'expressionType': 'SIMPLE', 'column': {'column_name': 'total_events'}, 'aggregate': 'SUM', 'label': 'SUM(total_events)'}],
+            'adhoc_filters': [],
+            'groupby': [],
             'viz_type': 'echarts_timeseries_bar',
-            'x_axis': 'minute_ts',
-            'y_axis': 'total_events',
         })
     }
 ]
