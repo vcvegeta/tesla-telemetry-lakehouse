@@ -21,17 +21,31 @@ if not db_result:
 db_id = db_result[0]
 print(f"✅ Found Tesla Lakehouse database (ID: {db_id})")
 
-# Create datasets (tables) for the charts
+# Create datasets (tables) for the charts with explicit column definitions
 datasets = [
     {
         'table_name': 'gold_vehicle_minute_metrics',
         'schema': 'public',
-        'description': 'Vehicle metrics aggregated per minute'
+        'description': 'Vehicle metrics aggregated per minute',
+        'columns': [
+            {'column_name': 'vehicle_id', 'type': 'TEXT', 'is_dttm': False},
+            {'column_name': 'minute_ts', 'type': 'TIMESTAMP', 'is_dttm': True},
+            {'column_name': 'avg_speed_mph', 'type': 'DOUBLE PRECISION', 'is_dttm': False},
+            {'column_name': 'max_speed_mph', 'type': 'DOUBLE PRECISION', 'is_dttm': False},
+            {'column_name': 'min_battery_percent', 'type': 'INTEGER', 'is_dttm': False},
+            {'column_name': 'event_count', 'type': 'BIGINT', 'is_dttm': False},
+        ]
     },
     {
         'table_name': 'gold_fleet_minute_metrics',
         'schema': 'public',
-        'description': 'Fleet-wide metrics aggregated per minute'
+        'description': 'Fleet-wide metrics aggregated per minute',
+        'columns': [
+            {'column_name': 'minute_ts', 'type': 'TIMESTAMP', 'is_dttm': True},
+            {'column_name': 'avg_speed_mph_fleet', 'type': 'DOUBLE PRECISION', 'is_dttm': False},
+            {'column_name': 'min_battery_percent_fleet', 'type': 'INTEGER', 'is_dttm': False},
+            {'column_name': 'total_events', 'type': 'BIGINT', 'is_dttm': False},
+        ]
     }
 ]
 
@@ -54,8 +68,18 @@ for dataset in datasets:
             VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
         """, (db_id, dataset['table_name'], dataset['schema'], dataset['description']))
         
-        dataset_ids[dataset['table_name']] = cursor.lastrowid
-        print(f"✅ Created dataset '{dataset['table_name']}' (ID: {cursor.lastrowid})")
+        dataset_id = cursor.lastrowid
+        dataset_ids[dataset['table_name']] = dataset_id
+        print(f"✅ Created dataset '{dataset['table_name']}' (ID: {dataset_id})")
+        
+        # Insert columns for the dataset
+        for col in dataset['columns']:
+            cursor.execute("""
+                INSERT INTO table_columns (table_id, column_name, type, is_dttm, created_on, changed_on)
+                VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
+            """, (dataset_id, col['column_name'], col['type'], 1 if col['is_dttm'] else 0))
+        
+        print(f"  ↳ Added {len(dataset['columns'])} columns")
 
 conn.commit()
 
