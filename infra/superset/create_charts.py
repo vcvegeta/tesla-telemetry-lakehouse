@@ -67,12 +67,12 @@ charts = [
         'datasource_id': dataset_ids['gold_vehicle_minute_metrics'],
         'datasource_type': 'table',
         'params': json.dumps({
-            'metrics': ['avg_battery_level'],
-            'time_column': 'window_start',
+            'metrics': ['AVG(min_battery_percent)'],
+            'time_column': 'minute_ts',
             'time_grain': 'P1M',  # 1 minute
             'viz_type': 'echarts_timeseries_line',
-            'x_axis': 'window_start',
-            'y_axis': 'avg_battery_level',
+            'x_axis': 'minute_ts',
+            'y_axis': 'min_battery_percent',
         })
     },
     {
@@ -81,11 +81,11 @@ charts = [
         'datasource_id': dataset_ids['gold_fleet_minute_metrics'],
         'datasource_type': 'table',
         'params': json.dumps({
-            'metrics': ['total_events'],
-            'time_column': 'window_start',
+            'metrics': ['SUM(total_events)'],
+            'time_column': 'minute_ts',
             'time_grain': 'P1M',
             'viz_type': 'echarts_timeseries_bar',
-            'x_axis': 'window_start',
+            'x_axis': 'minute_ts',
             'y_axis': 'total_events',
         })
     }
