@@ -180,6 +180,20 @@ services:
     volumes:
       - minio_data:/data
 
+  # MinIO bucket initialization
+  minio-init:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set myminio http://minio:9000 minio minio12345;
+      mc mb myminio/lakehouse --ignore-existing;
+      echo '✅ MinIO lakehouse bucket created';
+      "
+    restart: "no"
+
   superset:
     build:
       context: ./superset
@@ -189,6 +203,8 @@ services:
       SUPERSET_SECRET_KEY: "change_me_please"
     depends_on:
       - postgres
+    volumes:
+      - superset_data:/app/superset_home
   
   ingestor:
     build:
@@ -259,3 +275,4 @@ volumes:
   postgres_data:
   minio_data:
   spark_ivy_cache:
+  superset_data:
