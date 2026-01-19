@@ -5,18 +5,19 @@ A real-time data lakehouse pipeline for Tesla vehicle telemetry data, built with
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://hub.docker.com/u/viraat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🎯 Overview
+## Overview
 
-This project demonstrates a production-grade data lakehouse architecture for processing streaming Tesla vehicle telemetry data through Bronze → Silver → Gold layers, with real-time analytics dashboards.
+A production-ready data lakehouse implementation processing Tesla vehicle telemetry through the medallion architecture (Bronze → Silver → Gold layers). The entire pipeline runs in Docker containers with automated initialization.
 
-### Key Features
+**What makes this different:** Everything auto-configures on startup. No manual database connections, no manual dashboard setup. Just run `docker-compose up -d` and you're ready.
 
-- ⚡ **Real-time Streaming**: Kafka ingestion with Spark Structured Streaming
-- 🏗️ **Medallion Architecture**: Bronze (raw) → Silver (clean) → Gold (aggregated) layers
-- 📊 **Interactive Dashboards**: Apache Superset with PostgreSQL backend
-- 🔄 **Automated Orchestration**: Airflow DAGs for batch processing
-- 🐳 **Fully Containerized**: One-command deployment via Docker Compose
-- 📈 **Scalable**: Separate Spark clusters for streaming and batch workloads
+### Technical Stack
+
+- **Stream Processing**: Apache Spark Structured Streaming with Kafka
+- **Data Storage**: MinIO (S3-compatible object storage) + PostgreSQL
+- **Orchestration**: Apache Airflow for batch jobs
+- **Visualization**: Apache Superset with programmatic dashboard creation
+- **Architecture**: Medallion pattern (Bronze/Silver/Gold) with separate Spark clusters for streaming and batch workloads
 
 ## 🏛️ Architecture
 
@@ -51,100 +52,107 @@ This project demonstrates a production-grade data lakehouse architecture for pro
                                      └────────────────┘
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
-### Prerequisites
-
+**Requirements:**
 - Docker Desktop (or Docker Engine + Docker Compose)
-- 8GB+ RAM recommended
-- 20GB+ free disk space
+- 8GB RAM minimum
+- 20GB free disk space
 
-### One-Command Deployment
+**Deploy:**
 
 ```bash
-# Clone the repository
 git clone https://github.com/vcvegeta/tesla-telemetry-lakehouse.git
-cd tesla-telemetry-lakehouse
-
-# Start all services
+cd tesla-telemetry-lakehouse/infra
 docker-compose up -d
-
-# Wait 2-3 minutes for services to initialize
-# Check status
-docker-compose ps
 ```
 
-That's it! All services are now running.
+Wait 2-3 minutes for initialization. All services start automatically:
+- MinIO creates the `lakehouse` bucket
+- PostgreSQL initializes the database schema
+- Superset creates database connections, datasets, charts, and dashboards
+- Airflow loads the batch processing DAG
+- Streaming jobs begin processing Kafka events
 
-## 📊 Access the Services
+Dashboards populate with data within 10-15 minutes as events flow through the pipeline.
+
+## Service Endpoints
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| **Spark Master (Streaming)** | http://localhost:8080 | - |
-| **Spark Master (Batch)** | http://localhost:8083 | - |
-| **Airflow** | http://localhost:8089 | admin / admin |
-| **Superset** | http://localhost:8088 | admin / admin |
-| **MinIO Console** | http://localhost:9001 | minio / minio12345 |
+| Superset (Dashboards) | http://localhost:8088 | admin / admin |
+| Airflow (Orchestration) | http://localhost:8089 | admin / admin |
+| Spark Master (Streaming) | http://localhost:8080 | - |
+| Spark Master (Batch) | http://localhost:8083 | - |
+| MinIO Console | http://localhost:9001 | minio / minio12345 |
 
-## 📈 What You'll See
+## Data Flow
 
-### 1. Real-Time Data Flow
+### Pipeline Overview
 
-- **Ingestor** generates Tesla telemetry data every 10 seconds
-- **Kafka** streams data to Bronze layer
-- **Spark Streaming** processes Bronze → Silver with data quality checks
-- **Airflow DAG** runs batch aggregations every 10 minutes (Silver → Gold)
+The ingestor generates mock Tesla telemetry events every 10 seconds and publishes them to Kafka. Two separate data processing paths handle the transformation:
 
-### 2. Superset Dashboards
+**Streaming Path (Bronze → Silver):**
+- Spark Structured Streaming consumes from Kafka in micro-batches
+- Raw events land in MinIO as Bronze layer Parquet files
+- A second streaming job applies schema validation and data quality checks
+- Cleaned records write to the Silver layer in MinIO
 
-After 10-15 minutes of data accumulation:
+**Batch Path (Silver → Gold):**
+- Airflow triggers a Spark batch job every 10 minutes
+- Reads Silver layer data and computes aggregations (per-vehicle and fleet-wide)
+- Writes aggregated metrics to PostgreSQL gold tables
+- Superset queries PostgreSQL to render dashboard charts
 
-1. Open Superset (http://localhost:8088)
-2. Login with `admin` / `admin`
-3. Navigate to **Dashboards**
-4. You'll see:
-   - **Tesla Battery Level Over Time** (line chart)
-   - **Telemetry Events Per Minute** (bar chart)
-   - Auto-refreshes every 10 minutes
+### Superset Dashboards
 
-### 3. Airflow Monitoring
+On first startup, an initialization script creates:
+- Database connection to PostgreSQL
+- Two datasets (gold_vehicle_minute_metrics, gold_fleet_minute_metrics)
+- Two charts (Battery Level Over Time, Events Per Minute)
+- A dashboard containing both charts
 
-1. Open Airflow (http://localhost:8089)
-2. Check the `silver_to_gold_batch` DAG
-3. See successful runs every 10 minutes
+Access the dashboard:
+1. Navigate to http://localhost:8088
+2. Login: admin / admin
+3. Go to Dashboards → Tesla Fleet Dashboard
 
-## 🗂️ Data Layers
+Charts populate with data after 10-15 minutes once the pipeline processes events through all three layers.
 
-### Bronze Layer (Raw Data)
-- **Location**: MinIO `s3a://lakehouse/bronze/telemetry_raw/`
-- **Format**: Parquet
-- **Schema**: Raw JSON from Kafka
-- **Processing**: Exactly-once from Kafka
+The automation works by directly inserting records into Superset's SQLite metadata database during container initialization. This survives `docker-compose down -v` restarts. See [SUPERSET_DASHBOARD.md](SUPERSET_DASHBOARD.md) for implementation details.
 
-### Silver Layer (Cleaned Data)
-- **Location**: MinIO `s3a://lakehouse/silver/telemetry_clean/`
-- **Format**: Parquet with explicit schema
-- **Processing**: Data quality checks, type casting, deduplication
+### Airflow
 
-### Gold Layer (Aggregated Metrics)
-- **Location**: 
-  - MinIO `s3a://lakehouse/gold/vehicle_minute_metrics/`
-  - PostgreSQL `gold_vehicle_minute_metrics` table
-- **Metrics**: Per-vehicle and fleet-wide aggregations
-- **Refresh**: Every 10 minutes via Airflow
+The `silver_to_gold_batch` DAG runs every 10 minutes, triggering a Spark job that reads from the Silver layer and writes aggregated metrics to PostgreSQL. View DAG runs at http://localhost:8089.
 
-## 🛠️ Tech Stack
+## Data Layers
 
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| **Data Ingestion** | Kafka 7.6.1 | Stream processing |
-| **Stream Processing** | Apache Spark 3.5.1 | Real-time ETL |
-| **Batch Processing** | Apache Spark 3.5.1 | Scheduled aggregations |
-| **Orchestration** | Apache Airflow 2.9.3 | Workflow management |
-| **Storage** | MinIO (S3-compatible) | Data lakehouse |
-| **Database** | PostgreSQL 16 | Gold layer storage |
-| **Visualization** | Apache Superset 4.1.0 | Dashboards |
-| **Language** | Python 3.11 | All data processing logic |
+**Bronze Layer** (`s3a://lakehouse/bronze/telemetry_raw/`)
+- Raw events from Kafka stored as Parquet
+- Exactly-once semantics with Kafka offset management
+- No schema enforcement at this stage
+
+**Silver Layer** (`s3a://lakehouse/silver/telemetry_clean/`)
+- Validated and typed Parquet files
+- Data quality filters applied (non-null checks, range validation)
+- Deduplication based on event_id and timestamp
+
+**Gold Layer** (PostgreSQL + MinIO)
+- Minute-level aggregations: `gold_vehicle_minute_metrics`, `gold_fleet_minute_metrics`
+- Computed metrics: avg_battery_level, avg_speed, total_events per time window
+- Refreshed every 10 minutes by Airflow-triggered Spark jobs
+
+## Technology Stack
+
+| Component | Technology | Version |
+|-----------|-----------|----------|
+| Stream Processing | Apache Spark | 3.5.1 |
+| Message Queue | Apache Kafka | 7.6.1 |
+| Orchestration | Apache Airflow | 2.9.3 |
+| Object Storage | MinIO | Latest |
+| Database | PostgreSQL | 16 |
+| Visualization | Apache Superset | 4.1.0 |
+| Language | Python | 3.11 |
 
 ## 🔧 Configuration
 
@@ -179,100 +187,90 @@ SPARK_WORKER_MEMORY: 2g
 --executor-memory 1g
 ```
 
-## 📝 Project Structure
+## Project Structure
 
 ```
 tesla-telemetry-lakehouse/
-├── docker-compose.yml          # Main orchestration file
-├── Dockerfile.spark            # Custom Spark image
-├── Dockerfile.airflow          # Custom Airflow image
-├── Dockerfile.ingestor         # Data generator image
+├── README.md
+├── SUPERSET_DASHBOARD.md
+├── infra/
+│   ├── docker-compose.yml
+│   └── superset/
+│       ├── Dockerfile
+│       ├── superset-init.sh
+│       └── create_charts.py
 ├── airflow/
 │   └── dags/
-│       └── silver_to_gold_dag.py   # Batch processing DAG
+│       └── silver_to_gold_dag.py
 ├── spark/
 │   ├── streaming_jobs/
-│   │   ├── kafka_to_minio_bronze.py    # Kafka → Bronze
-│   │   └── bronze_to_silver.py         # Bronze → Silver
+│   │   ├── kafka_to_minio_bronze.py
+│   │   └── bronze_to_silver.py
 │   └── batch_jobs/
-│       └── silver_to_gold.py           # Silver → Gold
+│       └── silver_to_gold.py
 └── services/
-    └── ingestor/
-        └── ingest.py           # Tesla data generator
+    ├── ingestor/
+    │   └── ingest.py
+    └── outage_detector/
+        └── outage_detector.py
 ```
 
-## 🎓 Use Cases
+## Use Cases
 
 This project demonstrates:
 
-- ✅ **Data Engineering**: End-to-end lakehouse implementation
-- ✅ **Stream Processing**: Real-time data pipelines with Spark Structured Streaming
-- ✅ **Batch Processing**: Scheduled aggregations with Airflow
-- ✅ **Data Architecture**: Medallion (Bronze/Silver/Gold) pattern
-- ✅ **DevOps**: Containerization and orchestration
-- ✅ **Data Visualization**: Business intelligence dashboards
+- End-to-end data lakehouse implementation with medallion architecture
+- Stream processing with Spark Structured Streaming
+- Batch orchestration using Airflow
+- Infrastructure as code with Docker Compose
+- Programmatic dashboard creation and deployment automation
 
-Perfect for:
-- Data Engineer portfolio projects
-- Learning modern data stack
-- Interview preparation
-- Architecture reference
+Suitable for portfolio projects, technical interviews, and learning modern data engineering patterns. The automated setup makes it easy to demonstrate during presentations.
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
-### Services not starting?
-
+**Services won't start:**
 ```bash
-# Check logs
 docker-compose logs <service-name>
-
-# Restart specific service
 docker-compose restart <service-name>
 ```
 
-### High memory usage?
-
-```bash
-# Check Docker memory
-docker stats
-
-# Reduce worker memory in docker-compose.yml
+**High memory usage:**
+Reduce worker memory in `docker-compose.yml`:
+```yaml
 SPARK_WORKER_MEMORY: 1g
 ```
 
-### Data not appearing in Superset?
+**Empty charts in Superset:**
 
-1. Wait 10-15 minutes for initial data accumulation
-2. Check Airflow DAG has run successfully
-3. Verify PostgreSQL has data:
-   ```bash
-   docker exec -it tesla-telemetry-postgres-1 psql -U airflow -d lakehouse -c "SELECT COUNT(*) FROM gold_vehicle_minute_metrics;"
-   ```
+This is normal for the first 10-15 minutes. Data flows through the pipeline in stages:
+- Minutes 0-5: Events land in Bronze layer from Kafka
+- Minutes 5-10: Streaming job processes Bronze to Silver
+- Minutes 10-15: Batch job aggregates Silver to Gold (charts populate)
 
-## 🤝 Contributing
+Verify data exists:
+```bash
+docker exec tesla-telemetry-postgres-1 psql -U airflow -d lakehouse -c "SELECT COUNT(*) FROM gold_vehicle_minute_metrics;"
+```
 
-This is a portfolio/educational project. Feel free to fork and adapt for your needs!
+Verify dashboard creation:
+```bash
+docker logs tesla-telemetry-superset-1 | grep "setup complete"
+```
 
-## 📄 License
+**Test full automation:**
+```bash
+cd infra
+docker-compose down -v  # Delete all volumes
+docker-compose up -d     # Everything recreates automatically
+```
 
-MIT License - feel free to use this project for learning and portfolio purposes.
+## License
 
-## 👤 Author
+MIT License
 
-**Viraat Chaudhary**
-- GitHub: [@vcvegeta](https://github.com/vcvegeta)
-- Docker Hub: [viraat](https://hub.docker.com/u/viraat)
+## Author
 
-## 🌟 Acknowledgments
-
-Built with:
-- Apache Spark
-- Apache Kafka
-- Apache Airflow
-- Apache Superset
-- MinIO
-- PostgreSQL
-
----
-
-**⭐ If this project helped you, please star it on GitHub!**
+Viraat Chaudhary  
+GitHub: [@vcvegeta](https://github.com/vcvegeta)  
+Docker Hub: [viraat](https://hub.docker.com/u/viraat)
