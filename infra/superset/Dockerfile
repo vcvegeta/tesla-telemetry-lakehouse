@@ -6,12 +6,10 @@ USER root
 RUN python -m ensurepip && \
     python -m pip install psycopg2-binary
 
-# Copy init script
+# Copy init script and chart creation script
 COPY superset-init.sh /app/docker/superset-init.sh
+COPY create_charts.py /app/docker/create_charts.py
 RUN chmod +x /app/docker/superset-init.sh
-
-# Copy dashboard export for auto-import
-COPY dashboards_export.zip /app/docker/dashboards_export.zip
 
 USER superset
 

@@ -53,12 +53,12 @@ else:
 conn.close()
 PYEOF
 
-# Import dashboards if export file exists
-if [ -f "/app/docker/dashboards_export.zip" ]; then
-    echo "📊 Importing dashboards..."
-    superset import-dashboards -p /app/docker/dashboards_export.zip -u admin || echo "⚠️  Dashboard import failed - will be available after first database connection"
+# Create charts and dashboard programmatically
+if [ -f "/app/docker/create_charts.py" ]; then
+    echo "📊 Creating charts and dashboard..."
+    python /app/docker/create_charts.py
 else
-    echo "ℹ️  No dashboard export found, skipping import"
+    echo "ℹ️  No chart creation script found, skipping"
 fi
 
 echo "✅ Superset initialization complete!"
