@@ -24,34 +24,33 @@ superset fab create-admin \
 echo "⚙️  Initializing Superset..."
 superset init
 
-# Create database connection programmatically
+# Create database connection programmatically using SQL
 echo "🔗 Creating PostgreSQL database connection..."
 python << 'PYEOF'
-from superset import app, db
-from superset.models.core import Database
-import logging
+import sqlite3
+import json
 
-logging.basicConfig(level=logging.INFO)
+# Connect to Superset's metadata database
+conn = sqlite3.connect('/app/superset_home/superset.db')
+cursor = conn.cursor()
 
-with app.app_context():
-    # Check if database already exists
-    existing_db = db.session.query(Database).filter_by(database_name='Tesla Lakehouse').first()
+# Check if database already exists
+cursor.execute("SELECT id FROM dbs WHERE database_name = 'Tesla Lakehouse'")
+existing = cursor.fetchone()
+
+if not existing:
+    # Insert database connection
+    cursor.execute("""
+        INSERT INTO dbs (database_name, sqlalchemy_uri, expose_in_sqllab, allow_ctas, allow_cvas, allow_dml, created_on, changed_on)
+        VALUES (?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+    """, ('Tesla Lakehouse', 'postgresql+psycopg2://airflow:airflow@postgres:5432/lakehouse', 1, 1, 1, 1))
     
-    if not existing_db:
-        # Create new database connection
-        new_db = Database(
-            database_name='Tesla Lakehouse',
-            sqlalchemy_uri='postgresql+psycopg2://airflow:airflow@postgres:5432/lakehouse',
-            expose_in_sqllab=True,
-            allow_ctas=True,
-            allow_cvas=True,
-            allow_dml=True,
-        )
-        db.session.add(new_db)
-        db.session.commit()
-        print("✅ Database connection 'Tesla Lakehouse' created successfully!")
-    else:
-        print("ℹ️  Database connection 'Tesla Lakehouse' already exists")
+    conn.commit()
+    print("✅ Database connection 'Tesla Lakehouse' created successfully!")
+else:
+    print("ℹ️  Database connection 'Tesla Lakehouse' already exists")
+
+conn.close()
 PYEOF
 
 # Import dashboards if export file exists
