@@ -83,7 +83,7 @@ for dataset in datasets:
 
 conn.commit()
 
-# Create charts
+# Create charts with proper temporal configuration
 charts = [
     {
         'slice_name': 'Battery Level Over Time',
@@ -91,12 +91,22 @@ charts = [
         'datasource_id': dataset_ids['gold_vehicle_minute_metrics'],
         'datasource_type': 'table',
         'params': json.dumps({
+            'granularity_sqla': 'minute_ts',
             'time_grain_sqla': 'P1M',
-            'time_range': 'No filter',
-            'metrics': [{'expressionType': 'SIMPLE', 'column': {'column_name': 'min_battery_percent'}, 'aggregate': 'AVG', 'label': 'AVG(min_battery_percent)'}],
+            'time_range': 'Last week',
+            'metrics': [
+                {
+                    'expressionType': 'SIMPLE',
+                    'column': {'column_name': 'min_battery_percent', 'type': 'INTEGER'},
+                    'aggregate': 'AVG',
+                    'label': 'AVG(min_battery_percent)'
+                }
+            ],
             'adhoc_filters': [],
             'groupby': [],
+            'limit': 10000,
             'viz_type': 'echarts_timeseries_line',
+            'color_scheme': 'supersetColors',
         })
     },
     {
@@ -105,12 +115,22 @@ charts = [
         'datasource_id': dataset_ids['gold_fleet_minute_metrics'],
         'datasource_type': 'table',
         'params': json.dumps({
+            'granularity_sqla': 'minute_ts',
             'time_grain_sqla': 'P1M',
-            'time_range': 'No filter',
-            'metrics': [{'expressionType': 'SIMPLE', 'column': {'column_name': 'total_events'}, 'aggregate': 'SUM', 'label': 'SUM(total_events)'}],
+            'time_range': 'Last week',
+            'metrics': [
+                {
+                    'expressionType': 'SIMPLE',
+                    'column': {'column_name': 'total_events', 'type': 'BIGINT'},
+                    'aggregate': 'SUM',
+                    'label': 'SUM(total_events)'
+                }
+            ],
             'adhoc_filters': [],
             'groupby': [],
+            'limit': 10000,
             'viz_type': 'echarts_timeseries_bar',
+            'color_scheme': 'supersetColors',
         })
     }
 ]
