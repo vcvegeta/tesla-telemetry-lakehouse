@@ -5,6 +5,16 @@ A real-time data lakehouse pipeline for Tesla vehicle telemetry data, built with
 [![Docker](https://img.shields.io/badge/docker-ready-blue.svg)](https://hub.docker.com/u/viraat)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+---
+
+## 📊 Dashboard Preview
+
+![Tesla Fleet Dashboard](docs/images/tesla_fleet_dashboard.png)
+
+*Sample Superset dashboard showing real-time battery levels and telemetry event metrics. Created in ~5 minutes following the [Dashboard Guide](infra/DASHBOARD_GUIDE.md).*
+
+---
+
 ## Overview
 
 A production-ready data lakehouse implementation processing Tesla vehicle telemetry through the medallion architecture (Bronze → Silver → Gold layers). The entire pipeline runs in Docker containers with automated initialization.
@@ -123,8 +133,30 @@ Create custom visualizations following the guide in [`infra/DASHBOARD_GUIDE.md`]
 4. Add charts to a dashboard
 
 **Available Data Tables:**
-- `gold_vehicle_minute_metrics`: Per-vehicle metrics (battery, speed, events)
-- `gold_fleet_minute_metrics`: Fleet-wide aggregations
+
+*Table: `gold_vehicle_minute_metrics`*
+
+![Vehicle Metrics Columns](docs/images/gold_vehicle_minute_metrics_columns.png)
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `vehicle_id` | TEXT | Unique vehicle identifier |
+| `minute_ts` | TIMESTAMP | Minute-level timestamp |
+| `avg_speed_mph` | DOUBLE | Average speed in MPH |
+| `max_speed_mph` | DOUBLE | Maximum speed in MPH |
+| `min_battery_percent` | INTEGER | Minimum battery percentage |
+| `event_count` | BIGINT | Total telemetry events |
+
+*Table: `gold_fleet_minute_metrics`*
+
+![Fleet Metrics Columns](docs/images/gold_fleet_minute_metrics_columns.png)
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `minute_ts` | TIMESTAMP | Minute-level timestamp |
+| `avg_speed_mph_fleet` | DOUBLE | Fleet average speed |
+| `min_battery_percent_fleet` | INTEGER | Fleet minimum battery |
+| `total_events` | BIGINT | Total fleet events |
 
 **Why manual chart creation?** This gives you flexibility to build custom visualizations tailored to your needs. Superset supports 50+ chart types - create as many dashboards as you want!
 

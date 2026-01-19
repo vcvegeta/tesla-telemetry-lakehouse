@@ -54,6 +54,19 @@ This guide shows you how to create custom dashboards and charts in Superset to v
    - **Table:** gold_vehicle_minute_metrics
 4. Click **Create Dataset and Create Chart**
 
+**Available Columns in `gold_vehicle_minute_metrics`:**
+
+![gold_vehicle_minute_metrics columns](../docs/images/gold_vehicle_minute_metrics_columns.png)
+
+| Column Name | Data Type | Description |
+|-------------|-----------|-------------|
+| `vehicle_id` | TEXT | Unique identifier for each vehicle |
+| `minute_ts` | TIMESTAMP | Timestamp for minute-level aggregation |
+| `avg_speed_mph` | DOUBLE PRECISION | Average speed in miles per hour |
+| `max_speed_mph` | DOUBLE PRECISION | Maximum speed in miles per hour |
+| `min_battery_percent` | INTEGER | Minimum battery percentage |
+| `event_count` | BIGINT | Total number of telemetry events |
+
 ---
 
 ### Step 3: Create Chart 1 - Battery Level Over Time (Line Chart)
@@ -149,9 +162,21 @@ Here are some chart ideas using the available data:
 ### Available Tables:
 1. **`gold_vehicle_minute_metrics`**
    - Columns: `vehicle_id`, `minute_ts`, `avg_speed_mph`, `max_speed_mph`, `min_battery_percent`, `event_count`
+   - See column details in Step 2 above
 
 2. **`gold_fleet_minute_metrics`**
    - Columns: `minute_ts`, `avg_speed_mph_fleet`, `min_battery_percent_fleet`, `total_events`
+
+![gold_fleet_minute_metrics columns](../docs/images/gold_fleet_minute_metrics_columns.png)
+
+| Column Name | Data Type | Description |
+|-------------|-----------|-------------|
+| `minute_ts` | TIMESTAMP | Timestamp for minute-level aggregation |
+| `avg_speed_mph_fleet` | DOUBLE PRECISION | Fleet-wide average speed |
+| `min_battery_percent_fleet` | INTEGER | Fleet-wide minimum battery percentage |
+| `total_events` | BIGINT | Total events across all vehicles |
+
+---
 
 ### Chart Ideas:
 - 📈 **Line Chart:** Average Speed Over Time (`avg_speed_mph`)
@@ -167,18 +192,24 @@ Here are some chart ideas using the available data:
 
 ## 📸 Sample Dashboard Preview
 
-Below is an example of what your Tesla Fleet Dashboard might look like:
+Below is an example of what your Tesla Fleet Dashboard looks like with the 2 example charts:
+
+![Tesla Fleet Dashboard](../docs/images/tesla_fleet_dashboard.png)
 
 **Tesla Fleet Dashboard:**
-- **Chart 1:** Battery Level Over Time (Line Chart)
-  - Shows `MIN(min_battery_percent)` trending over time
+- **Chart 1 (Left):** Battery Level Over Time (Line Chart)
+  - Metric: `MIN(min_battery_percent)` 
+  - Shows battery level trending over time
   - Helps identify battery drain patterns
+  - Time range: Real-time telemetry data
   
-- **Chart 2:** Events Per Minute (Bar Chart)
-  - Shows `SUM(event_count)` to track telemetry activity
+- **Chart 2 (Right):** Events Per Minute (Bar Chart)
+  - Metric: `SUM(event_count)`
+  - Tracks telemetry event volume per minute
   - Useful for monitoring data ingestion health
+  - Shows consistent event flow through the pipeline
 
-*Note: Your charts will populate with real data after ~15 minutes of the system running.*
+*This dashboard was created in ~5 minutes following the steps above. Your charts will populate with real data after ~15 minutes of the system running.*
 
 ---
 
