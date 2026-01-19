@@ -73,7 +73,9 @@ A production-ready data lakehouse implementation processing Tesla vehicle teleme
 
 ```bash
 git clone https://github.com/vcvegeta/tesla-telemetry-lakehouse.git
-cd tesla-telemetry-lakehouse/infra
+cd tesla-telemetry-lakehouse
+mkdir -p airflow/logs
+cd infra
 docker-compose up -d
 ```
 
