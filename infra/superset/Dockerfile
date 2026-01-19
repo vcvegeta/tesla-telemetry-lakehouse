@@ -2,8 +2,9 @@ FROM apache/superset:latest
 
 USER root
 
-# Install PostgreSQL driver
-RUN pip install psycopg2-binary
+# Install PostgreSQL driver in the correct Python environment
+RUN python -m ensurepip && \
+    python -m pip install psycopg2-binary
 
 # Copy init script
 COPY superset-init.sh /app/docker/superset-init.sh
