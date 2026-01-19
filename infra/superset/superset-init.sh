@@ -27,7 +27,7 @@ superset init
 # Import dashboards if export file exists
 if [ -f "/app/docker/dashboards_export.zip" ]; then
     echo "📊 Importing dashboards..."
-    superset import-dashboards -p /app/docker/dashboards_export.zip || echo "⚠️  Dashboard import failed (might be first run)"
+    superset import-dashboards -p /app/docker/dashboards_export.zip -u admin || echo "⚠️  Dashboard import failed (might be first run)"
 else
     echo "ℹ️  No dashboard export found, skipping import"
 fi
