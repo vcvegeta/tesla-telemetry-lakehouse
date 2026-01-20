@@ -32,6 +32,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init-lakehouse-db.sh:/docker-entrypoint-initdb.d/init-lakehouse-db.sh
     restart: unless-stopped
 
   # MinIO - S3-compatible object storage for lakehouse
