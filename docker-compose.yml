@@ -48,6 +48,20 @@ services:
       - minio_data:/data
     restart: unless-stopped
 
+  # MinIO bucket initialization
+  minio-init:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set myminio http://minio:9000 minio minio12345;
+      mc mb myminio/lakehouse --ignore-existing;
+      echo '✅ MinIO lakehouse bucket created';
+      "
+    restart: "no"
+
   # Zookeeper - Required for Kafka
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.1
